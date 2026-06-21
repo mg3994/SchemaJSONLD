@@ -2,10 +2,11 @@
     "version": "3.9.3",
     "app": {
         "name": "jsonld",
-        "bundleId": "com.example.jsonld"
+        "bundleId": "com.mg3994.jsonld"
     },
     "main": {},
     "experimental": {
         "load_packages": true
-    }
+    },
+    "permissions": []
 }

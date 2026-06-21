@@ -8,7 +8,7 @@
 PRODUCT_NAME = jsonld
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.jsonld
+PRODUCT_BUNDLE_IDENTIFIER = com.mg3994.jsonld;
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.mg3994.jsonld All rights reserved.
