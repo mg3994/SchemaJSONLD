@@ -1,0 +1,11 @@
+{
+    "version": "3.9.3",
+    "app": {
+        "name": "jsonld",
+        "bundleId": "com.example.jsonld"
+    },
+    "main": {},
+    "experimental": {
+        "load_packages": true
+    }
+}
