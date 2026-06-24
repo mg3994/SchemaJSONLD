@@ -1,0 +1,272 @@
+import 'package:flutter/material.dart';
+import 'package:jsonld/globals/themes.dart';
+import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:jsonld/schema_entity.dart';
+import 'package:jsonld/schema_service.dart';
+import 'package:jsonld/schema_value.dart';
+import 'dart:convert';
+import 'package:provider/provider.dart';
+
+@NowaGenerated()
+class AppState extends ChangeNotifier {
+  AppState();
+
+  factory AppState.of(BuildContext context, {bool listen = true}) {
+    return Provider.of<AppState>(context, listen: listen);
+  }
+
+  ThemeData _theme = lightTheme;
+
+  ThemeData get theme {
+    return _theme;
+  }
+
+  final List<SchemaEntity> _documents = [];
+
+  int _selectedDocumentIndex = 0;
+
+  bool _isSchemaLoading = false;
+
+  String? _loadError;
+
+  String _jsonLdOutput = '';
+
+  List<SchemaEntity> get documents {
+    return _documents;
+  }
+
+  int get selectedDocumentIndex {
+    return _selectedDocumentIndex;
+  }
+
+  SchemaEntity? get rootEntity {
+    return _documents.isNotEmpty ? _documents[_selectedDocumentIndex] : null;
+  }
+
+  bool get isSchemaLoading {
+    return _isSchemaLoading;
+  }
+
+  String? get loadError {
+    return _loadError;
+  }
+
+  String get jsonLdOutput {
+    return _jsonLdOutput;
+  }
+
+  void changeTheme(ThemeData theme) {
+    _theme = theme;
+    notifyListeners();
+  }
+
+  Future<void> initSchemaService() async {
+    _isSchemaLoading = true;
+    notifyListeners();
+    await SchemaService.instance.init();
+    _isSchemaLoading = SchemaService.instance.isLoadingFullSchema;
+    _loadError = SchemaService.instance.loadError;
+    if (_documents.isEmpty) {
+      _documents.add(
+        SchemaEntity(
+          id: 'doc_1',
+          name: 'My Personal Profile',
+          type: 'schema:Person',
+          properties: {
+            'schema:name': [SchemaValue(id: 'val_1', value: 'John Doe')],
+            'schema:jobTitle': [
+              SchemaValue(id: 'val_2', value: 'Software Engineer'),
+            ],
+          },
+        ),
+      );
+      _documents.add(
+        SchemaEntity(
+          id: 'doc_2',
+          name: 'Company Website',
+          type: 'schema:WebSite',
+          properties: {
+            'schema:name': [
+              SchemaValue(id: 'val_3', value: 'Acme Corp Portal'),
+            ],
+            'schema:url': [
+              SchemaValue(id: 'val_4', value: 'https://acme.example.com'),
+            ],
+          },
+        ),
+      );
+    }
+    generateJsonLdOutput();
+    notifyListeners();
+  }
+
+  void selectDocument(int index) {
+    if (index >= 0 && index < _documents.length) {
+      _selectedDocumentIndex = index;
+      generateJsonLdOutput();
+      notifyListeners();
+    }
+  }
+
+  void setRootEntity(SchemaEntity entity) {
+    if (_documents.isNotEmpty) {
+      _documents[_selectedDocumentIndex] = entity;
+    } else {
+      _documents.add(entity);
+      _selectedDocumentIndex = 0;
+    }
+    generateJsonLdOutput();
+    notifyListeners();
+  }
+
+  void createNewDocument(String name, String typeId) {
+    final doc = SchemaEntity(
+      id: 'doc_${DateTime.now().millisecondsSinceEpoch}',
+      name: name.isEmpty ? '${typeId.split(':').last} Markup' : name,
+      type: typeId,
+      properties: {},
+    );
+    _documents.add(doc);
+    _selectedDocumentIndex = _documents.length - 1;
+    generateJsonLdOutput();
+    notifyListeners();
+  }
+
+  void duplicateDocument(int index) {
+    if (index >= 0 && index < _documents.length) {
+      final doc = _documents[index].clone();
+      _documents.add(doc);
+      _selectedDocumentIndex = _documents.length - 1;
+      generateJsonLdOutput();
+      notifyListeners();
+    }
+  }
+
+  void renameDocument(int index, String newName) {
+    if (index >= 0 && index < _documents.length) {
+      _documents[index].name = newName;
+      notifyListeners();
+    }
+  }
+
+  void deleteDocument(int index) {
+    if (_documents.length > 1 && index >= 0 && index < _documents.length) {
+      _documents.removeAt(index);
+      if (_selectedDocumentIndex >= _documents.length) {
+        _selectedDocumentIndex = _documents.length - 1;
+      }
+      generateJsonLdOutput();
+      notifyListeners();
+    } else if (_documents.length == 1) {
+      _documents[0] = SchemaEntity(
+        id: 'doc_${DateTime.now().millisecondsSinceEpoch}',
+        name: 'Untitled Document',
+        type: 'schema:Person',
+        properties: {},
+      );
+      _selectedDocumentIndex = 0;
+      generateJsonLdOutput();
+      notifyListeners();
+    }
+  }
+
+  void updateRootType(String type) {
+    final root = rootEntity;
+    if (root != null) {
+      root.type = type;
+      root.properties.clear();
+      generateJsonLdOutput();
+      notifyListeners();
+    }
+  }
+
+  void addPropertyToEntity(
+    SchemaEntity entity,
+    String propertyId,
+    dynamic initialValue,
+  ) {
+    if (entity.properties[propertyId] == null) {
+      entity.properties[propertyId] = [];
+    }
+    entity.properties[propertyId]?.add(
+      SchemaValue(
+        id: 'val_${DateTime.now().microsecondsSinceEpoch}',
+        value: initialValue,
+      ),
+    );
+    generateJsonLdOutput();
+    notifyListeners();
+  }
+
+  void updatePropertyValue(
+    SchemaEntity entity,
+    String propertyId,
+    String valueId,
+    dynamic newValue,
+  ) {
+    final list = entity.properties[propertyId];
+    if (list != null) {
+      final index = list.indexWhere((val) => val.id == valueId);
+      if (index != -1) {
+        list[index].value = newValue;
+        generateJsonLdOutput();
+        notifyListeners();
+      }
+    }
+  }
+
+  void removePropertyValue(
+    SchemaEntity entity,
+    String propertyId,
+    String valueId,
+  ) {
+    final list = entity.properties[propertyId];
+    if (list != null) {
+      list.removeWhere((val) => val.id == valueId);
+      if (list.isEmpty) {
+        entity.properties.remove(propertyId);
+      }
+      generateJsonLdOutput();
+      notifyListeners();
+    }
+  }
+
+  void removePropertyFromEntity(SchemaEntity entity, String propertyId) {
+    entity.properties.remove(propertyId);
+    generateJsonLdOutput();
+    notifyListeners();
+  }
+
+  void generateJsonLdOutput() {
+    final root = rootEntity;
+    if (root == null) {
+      _jsonLdOutput = '{}';
+    } else {
+      try {
+        final map = root.toJsonLd(isRoot: true);
+        final encoder = const JsonEncoder.withIndent('  ');
+        _jsonLdOutput = encoder.convert(map);
+      } catch (e) {
+        _jsonLdOutput = 'Error generating JSON-LD: ${e}';
+      }
+    }
+  }
+
+  bool importJsonLd(String jsonString) {
+    try {
+      final dynamic decoded = json.decode(jsonString);
+      if (decoded is Map<String, dynamic>) {
+        final imported = SchemaEntity.fromJsonLd(decoded);
+        _documents.add(imported);
+        _selectedDocumentIndex = _documents.length - 1;
+        generateJsonLdOutput();
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error importing JSON-LD: ${e}');
+      return false;
+    }
+  }
+}
