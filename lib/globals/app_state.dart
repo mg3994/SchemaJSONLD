@@ -136,8 +136,8 @@ class AppState extends ChangeNotifier {
       );
       _documents.add(doc1);
       _documents.add(doc2);
-      await persistDocument(doc1);
-      await persistDocument(doc2);
+      await persistDocument(doc1, immediate: true);
+      await persistDocument(doc2, immediate: true);
     }
     generateJsonLdOutput();
     loadInterstitialAd();
@@ -358,6 +358,7 @@ class AppState extends ChangeNotifier {
         final imported = SchemaEntity.fromJsonLd(decoded);
         _documents.add(imported);
         _selectedDocumentIndex = _documents.length - 1;
+        persistDocument(imported, immediate: true);
         generateJsonLdOutput();
         showInterstitialAd();
         notifyListeners();
