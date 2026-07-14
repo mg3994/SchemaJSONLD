@@ -87,7 +87,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   Future<void> _launchWebAd() async {
-    final urlStr = widget.webAdUrl ?? 'https://nowa.dev';
+    final urlStr = widget.webAdUrl ?? 'https://hireflutter.uk/';
     final url = Uri.parse(urlStr);
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -127,13 +127,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       final theme = Theme.of(context);
       final isDark = theme.brightness == Brightness.dark;
       final imageUrl =
-          widget.webImageUrl ??
-          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400';
-      final title =
-          widget.webTitle ?? 'Build High-Performance Cross-Platform Apps';
-      final subtitle =
-          widget.webSubtitle ??
-          'Design and code visually in real-time with Nowa Flutter Builder.';
+          widget.webImageUrl ?? 'https://www.antinna.in/favicon.ico';
+      final title = widget.webTitle ?? 'Want to read Something Interesting?';
+      final subtitle = widget.webSubtitle ?? 'Head to Our Blog.';
       return Container(
         width: defaultWidth ?? double.infinity,
         height: defaultHeight,
@@ -276,7 +272,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
                         mainAxisSize: MainAxisSize.min,
                         children: const [
                           Text(
-                            'Learn More',
+                            'Read Blog',
                             style: TextStyle(
                               fontSize: 12.0,
                               fontWeight: FontWeight.bold,
