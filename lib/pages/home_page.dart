@@ -5,6 +5,7 @@ import 'package:jsonld/schema_service.dart';
 import 'package:jsonld/globals/themes.dart';
 import 'package:jsonld/components/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:jsonld/schema_entity.dart';
 import 'package:jsonld/schema_value.dart';
 import 'package:jsonld/models/schema_property.dart';
@@ -477,19 +478,24 @@ class _HomePageState extends State<HomePage> {
                     'Documentation',
                     style: TextStyle(fontSize: 11.0),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     final cleanType = root!.type.replaceAll('schema:', '');
                     final url =
                         'https://schema.org/docs/search_results.html?q=${cleanType}';
-                    Clipboard.setData(ClipboardData(text: url));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Schema.org documentation URL copied! 🔗\n${url}',
+                    final uri = Uri.parse(url);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      Clipboard.setData(ClipboardData(text: url));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Schema.org documentation URL copied! 🔗\n${url}',
+                          ),
+                          behavior: SnackBarBehavior.floating,
                         ),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                      );
+                    }
                   },
                 ),
               ],
