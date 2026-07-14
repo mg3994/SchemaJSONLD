@@ -127,7 +127,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       final theme = Theme.of(context);
       final isDark = theme.brightness == Brightness.dark;
       final imageUrl = widget.webImageUrl ??
-          'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjjbjBJy024ARDNuDkHCE0YRr3HZORL7bdOC8NqSv-71EFfF4uBxn-2mOtOXZ0KA09Mmx6XEQZ2BDUNk9byj9bKr_F5fdUbRoNYHtFP6fSSw8-Uq2wBv7zJzGYUyeGY9XNdXX3ARqLyXyCiKce7QFHaV_CIV1_MCRkNXBj1SS5iukzMgBdG7YVuicBtHLO2/s1536/schemalinkeddata.png';
+          'https://raw.githubusercontent.com/mg3994/dust-pan/main/images/hire_flutter_uk.png';
       final title = widget.webTitle ?? 'Want to read Something Interesting?';
       final subtitle = widget.webSubtitle ?? 'Head to Our Blog.';
       return Container(
