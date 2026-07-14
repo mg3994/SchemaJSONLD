@@ -120,6 +120,28 @@
       letter-spacing: 2px;
     }
 
+    .loader-tip {
+      margin-top: 36px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.45);
+      background-color: rgba(255, 255, 255, 0.03);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 85%;
+      line-height: 1.4;
+      animation: text-pulse 2s infinite ease-in-out alternate;
+    }
+
+    .info-icon {
+      color: #03dac6;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
     @keyframes pulse {
       0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
       50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; box-shadow: 0 0 30px #6200ee; }
@@ -149,6 +171,10 @@
     </div>
     <div class="loader-text">Schema Visual Editor</div>
     <div class="loader-subtext">Initializing database & workspace...</div>
+    <div class="loader-tip">
+      <span class="info-icon">ℹ</span>
+      <span>Mobile Users: If loading persists, please switch to <b>"Desktop Site"</b> view in your browser settings.</span>
+    </div>
   </div>
   <script src="flutter_bootstrap.js" async></script>
 </body>
