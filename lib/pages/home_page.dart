@@ -200,6 +200,8 @@ class _HomePageState extends State<HomePage> {
             if (isWide) ...[
               const SizedBox(width: 16.0),
               _buildStatusBadge(appState),
+              const SizedBox(width: 8.0),
+              _buildAutosaveBadge(appState),
             ],
           ],
         ),
@@ -308,6 +310,63 @@ class _HomePageState extends State<HomePage> {
               },
             ),
       bottomNavigationBar: const SafeArea(child: BannerAdWidget()),
+    );
+  }
+
+  Widget _buildAutosaveBadge(AppState appState) {
+    final status = appState.saveStatus;
+    final isSaving = status == 'Saving...';
+    final isError = status.contains('Error');
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final Color bgColor = isSaving
+        ? colorScheme.secondaryContainer
+        : (isError ? colorScheme.errorContainer : (colorScheme.surfaceContainerHighest ?? Colors.grey.withOpacity(0.15)));
+    final Color fgColor = isSaving
+        ? colorScheme.onSecondaryContainer
+        : (isError ? colorScheme.onErrorContainer : colorScheme.onSurfaceVariant);
+    final IconData icon = isSaving
+        ? Icons.sync_outlined
+        : (isError ? Icons.error_outline : Icons.cloud_done_outlined);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(
+          color: fgColor.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isSaving)
+            const SizedBox(
+              width: 10.0,
+              height: 10.0,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+              ),
+            )
+          else
+            Icon(
+              icon,
+              size: 14.0,
+              color: fgColor,
+            ),
+          const SizedBox(width: 6.0),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 10.0,
+              fontWeight: FontWeight.bold,
+              color: fgColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:jsonld/schema_service.dart';
 import 'package:jsonld/schema_value.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' as drift;
@@ -36,6 +37,11 @@ class AppState extends ChangeNotifier {
 
   String _jsonLdOutput = '';
 
+  Timer? _debounceTimer;
+  String _saveStatus = 'Saved';
+
+  String get saveStatus => _saveStatus;
+
   List<SchemaEntity> get documents {
     return _documents;
   }
@@ -58,6 +64,12 @@ class AppState extends ChangeNotifier {
 
   String get jsonLdOutput {
     return _jsonLdOutput;
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 
   InterstitialAd? _interstitialAd;
@@ -132,20 +144,38 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> persistDocument(SchemaEntity entity) async {
-    try {
-      final serialized = json.encode(entity.serializeProperties());
-      await db.into(db.localDocuments).insertOnConflictUpdate(
-        LocalDocument(
-          id: entity.id,
-          name: entity.name,
-          type: entity.type,
-          propertiesJson: serialized,
-          updatedAt: DateTime.now(),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error persisting document to Drift: $e');
+  Future<void> persistDocument(SchemaEntity entity, {bool immediate = false}) async {
+    _saveStatus = 'Saving...';
+    notifyListeners();
+    _debounceTimer?.cancel();
+
+    Future<void> performSave() async {
+      try {
+        final serialized = json.encode(entity.serializeProperties());
+        await db.into(db.localDocuments).insertOnConflictUpdate(
+          LocalDocument(
+            id: entity.id,
+            name: entity.name,
+            type: entity.type,
+            propertiesJson: serialized,
+            updatedAt: DateTime.now(),
+          ),
+        );
+        _saveStatus = 'Saved';
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error persisting document to Drift: $e');
+        _saveStatus = 'Error saving';
+        notifyListeners();
+      }
+    }
+
+    if (immediate) {
+      await performSave();
+    } else {
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+        await performSave();
+      });
     }
   }
 
