@@ -483,9 +483,12 @@ class _HomePageState extends State<HomePage> {
                     final url =
                         'https://schema.org/docs/search_results.html?q=${cleanType}';
                     final uri = Uri.parse(url);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else {
+                    try {
+                      final launched = await launchUrl(uri);
+                      if (!launched) {
+                        throw Exception('Launch failed');
+                      }
+                    } catch (e) {
                       Clipboard.setData(ClipboardData(text: url));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -2527,6 +2530,50 @@ class _HomePageState extends State<HomePage> {
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
+          if (appState.isSchemaLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                children: [
+                  LinearProgressIndicator(),
+                  SizedBox(height: 4.0),
+                  Text(
+                    'Loading latest Schema.org vocabulary...',
+                    style: TextStyle(fontSize: 10.0, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          if (appState.loadError != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 16.0,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        'Offline Mode Active. ${appState.loadError}',
+                        style: TextStyle(
+                          fontSize: 10.0,
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: TextField(
