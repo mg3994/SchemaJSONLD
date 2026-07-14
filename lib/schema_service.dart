@@ -94,6 +94,36 @@ class SchemaService {
           'An offer to transfer some rights to an item or to provide a service.',
       subClassOf: const ['schema:Thing'],
     ),
+    'schema:GeoShape': const SchemaClass(
+      id: 'schema:GeoShape',
+      label: 'GeoShape',
+      comment: 'The geographic shape of a place.',
+      subClassOf: const ['schema:Thing'],
+    ),
+    'schema:GeoCircle': const SchemaClass(
+      id: 'schema:GeoCircle',
+      label: 'GeoCircle',
+      comment: 'A geographic circle of a place.',
+      subClassOf: const ['schema:GeoShape'],
+    ),
+    'schema:AdministrativeArea': const SchemaClass(
+      id: 'schema:AdministrativeArea',
+      label: 'AdministrativeArea',
+      comment: 'A geographical region, typically under the jurisdiction of a particular government.',
+      subClassOf: const ['schema:Place'],
+    ),
+    'schema:GeoCoordinates': const SchemaClass(
+      id: 'schema:GeoCoordinates',
+      label: 'GeoCoordinates',
+      comment: 'The geographic coordinates of a place or event.',
+      subClassOf: const ['schema:Thing'],
+    ),
+    'schema:Service': const SchemaClass(
+      id: 'schema:Service',
+      label: 'Service',
+      comment: 'A service provided by an organization or business person.',
+      subClassOf: const ['schema:Thing'],
+    ),
   };
 
   static const Map<String, SchemaProperty> _popularProperties = {
@@ -268,6 +298,41 @@ class SchemaService {
       comment: 'The country. For example, USA.',
       domains: const ['schema:PostalAddress'],
       ranges: const ['schema:Text'],
+    ),
+    'schema:areaServed': const SchemaProperty(
+      id: 'schema:areaServed',
+      label: 'areaServed',
+      comment: 'The geographic area where a service or offered item is provided.',
+      domains: const ['schema:LocalBusiness', 'schema:Service', 'schema:Organization'],
+      ranges: const ['schema:Place', 'schema:AdministrativeArea', 'schema:GeoShape', 'schema:Text'],
+    ),
+    'schema:geoMidpoint': const SchemaProperty(
+      id: 'schema:geoMidpoint',
+      label: 'geoMidpoint',
+      comment: 'Indicates the geographic midpoint of the areaServed.',
+      domains: const ['schema:GeoCircle'],
+      ranges: const ['schema:GeoCoordinates'],
+    ),
+    'schema:geoRadius': const SchemaProperty(
+      id: 'schema:geoRadius',
+      label: 'geoRadius',
+      comment: 'Indicates the geoRadius of the GeoCircle.',
+      domains: const ['schema:GeoCircle'],
+      ranges: const ['schema:Distance', 'schema:Number', 'schema:Text'],
+    ),
+    'schema:latitude': const SchemaProperty(
+      id: 'schema:latitude',
+      label: 'latitude',
+      comment: 'The latitude of a location.',
+      domains: const ['schema:GeoCoordinates'],
+      ranges: const ['schema:Number', 'schema:Text'],
+    ),
+    'schema:longitude': const SchemaProperty(
+      id: 'schema:longitude',
+      label: 'longitude',
+      comment: 'The longitude of a location.',
+      domains: const ['schema:GeoCoordinates'],
+      ranges: const ['schema:Number', 'schema:Text'],
     ),
   };
 

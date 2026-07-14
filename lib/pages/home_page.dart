@@ -100,6 +100,23 @@ class _HomePageState extends State<HomePage> {
         'schema:address',
         'schema:telephone',
         'schema:priceRange',
+        'schema:areaServed',
+      ];
+    } else if (classId.contains('Service')) {
+      return [
+        'schema:name',
+        'schema:areaServed',
+        'schema:provider',
+      ];
+    } else if (classId.contains('GeoCircle')) {
+      return [
+        'schema:geoMidpoint',
+        'schema:geoRadius',
+      ];
+    } else if (classId.contains('GeoCoordinates')) {
+      return [
+        'schema:latitude',
+        'schema:longitude',
       ];
     } else if (classId.contains('Product')) {
       return [
@@ -922,128 +939,202 @@ class _HomePageState extends State<HomePage> {
         )
         .toList();
     final classes = ranges.where((r) => !primitives.contains(r)).toList();
-    if (ranges.length == 1) {
-      final range = ranges.first;
-      if (primitives.contains(range)) {
-        appState.addPropertyToEntity(
-          entity,
-          propId,
-          range == 'schema:Boolean' ? false : '',
-        );
-      } else {
-        final nested = SchemaEntity(
-          id: 'nest_${DateTime.now().microsecondsSinceEpoch}',
-          type: range,
-          properties: {},
-        );
-        appState.addPropertyToEntity(entity, propId, nested);
-      }
-      return;
+
+    // Collect all subclasses for each expected range class
+    final Map<String, List<String>> classToSubclasses = {};
+    for (var baseClass in classes) {
+      final subs = _getSubclassesOf(baseClass);
+      classToSubclasses[baseClass] = subs;
     }
+
+    final List<MapEntry<String, String>> typeOptions = [];
+    // Direct base classes
+    for (var baseClass in classes) {
+      typeOptions.add(MapEntry(baseClass, 'Base expected type'));
+    }
+    // Subclasses
+    for (var baseClass in classes) {
+      final subs = classToSubclasses[baseClass] ?? [];
+      for (var sub in subs) {
+        if (!classes.contains(sub)) {
+          final baseLabel = baseClass.startsWith('schema:') ? baseClass.substring(7) : baseClass;
+          typeOptions.add(MapEntry(sub, 'Subtype of $baseLabel'));
+        }
+      }
+    }
+
+    // Deduplicate
+    final Set<String> seenIds = {};
+    final List<MapEntry<String, String>> uniqueTypeOptions = [];
+    for (var entry in typeOptions) {
+      if (!seenIds.contains(entry.key)) {
+        seenIds.add(entry.key);
+        uniqueTypeOptions.add(entry);
+      }
+    }
+
+    String searchVal = '';
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Value - Select Compliant Type'),
-        content: SizedBox(
-          width: 440.0,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'To ensure 100% Schema.org semantic compliance, choose a type from this property\'s official expected ranges:',
-                style: TextStyle(fontSize: 12.0),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final filteredOptions = uniqueTypeOptions.where((option) {
+            final label = option.key.startsWith('schema:') ? option.key.substring(7) : option.key;
+            final query = searchVal.toLowerCase();
+            return label.toLowerCase().contains(query) || option.value.toLowerCase().contains(query);
+          }).toList();
+
+          return AlertDialog(
+            title: const Text('Add Value - Select Compliant Type'),
+            content: SizedBox(
+              width: 480.0,
+              height: 440.0,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'To ensure 100% Schema.org semantic compliance, choose an expected type, a more specific subtype, or a simple value:',
+                    style: TextStyle(fontSize: 12.0),
+                  ),
+                  const SizedBox(height: 12.0),
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search types & subclasses...',
+                      prefixIcon: Icon(Icons.search, size: 20.0),
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (val) {
+                      setDialogState(() {
+                        searchVal = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12.0),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        if (filteredOptions.isNotEmpty) ...[
+                          const Text(
+                            'Structured Objects & Subclasses:',
+                            style: TextStyle(
+                              fontSize: 11.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 6.0),
+                          ...filteredOptions.map((option) {
+                            final clsId = option.key;
+                            final isSubclass = option.value != 'Base expected type';
+                            final label = clsId.startsWith('schema:') ? clsId.substring(7) : clsId;
+                            final comment = SchemaService.instance.classes[clsId]?.comment ?? '';
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: ListTile(
+                                leading: Icon(
+                                  isSubclass ? Icons.subdirectory_arrow_right : Icons.playlist_add_circle_outlined,
+                                  color: isSubclass ? Colors.orange : Colors.blue,
+                                ),
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      'Create "${label}"',
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 6.0),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+                                      decoration: BoxDecoration(
+                                        color: isSubclass ? Colors.orange.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8.0),
+                                      ),
+                                      child: Text(
+                                        option.value,
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSubclass ? Colors.orange.shade700 : Colors.blue.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: comment.isNotEmpty
+                                    ? Text(
+                                        comment,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 11.0),
+                                      )
+                                    : null,
+                                dense: true,
+                                onTap: () {
+                                  final nested = SchemaEntity(
+                                    id: 'nest_${DateTime.now().microsecondsSinceEpoch}',
+                                    type: clsId,
+                                    properties: {},
+                                  );
+                                  appState.addPropertyToEntity(entity, propId, nested);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                        if (primitives.isNotEmpty) ...[
+                          const SizedBox(height: 12.0),
+                          const Text(
+                            'Simple Values:',
+                            style: TextStyle(
+                              fontSize: 11.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 6.0),
+                          ...primitives.map((primId) {
+                            final label = primId.startsWith('schema:')
+                                ? primId.substring(7)
+                                : primId;
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.edit_note,
+                                  color: Colors.green,
+                                ),
+                                title: Text(
+                                  'Add "${label}" Field',
+                                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                                ),
+                                dense: true,
+                                onTap: () {
+                                  appState.addPropertyToEntity(
+                                    entity,
+                                    propId,
+                                    primId == 'schema:Boolean' ? false : '',
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16.0),
-              if (classes.isNotEmpty) ...[
-                const Text(
-                  'Structured Objects:',
-                  style: TextStyle(
-                    fontSize: 11.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
-                  ),
-                ),
-                const SizedBox(height: 6.0),
-                ...classes.map((clsId) {
-                  final label = clsId.startsWith('schema:')
-                      ? clsId.substring(7)
-                      : clsId;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.playlist_add_circle_outlined,
-                        color: Colors.blue,
-                        size: 18.0,
-                      ),
-                      title: Text(
-                        'Create Nested "${label}" Object',
-                        style: const TextStyle(fontSize: 12.5),
-                      ),
-                      dense: true,
-                      onTap: () {
-                        final nested = SchemaEntity(
-                          id: 'nest_${DateTime.now().microsecondsSinceEpoch}',
-                          type: clsId,
-                          properties: {},
-                        );
-                        appState.addPropertyToEntity(entity, propId, nested);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  );
-                }).toList(),
-              ],
-              if (primitives.isNotEmpty) ...[
-                if (classes.isNotEmpty) const SizedBox(height: 12.0),
-                const Text(
-                  'Simple Values:',
-                  style: TextStyle(
-                    fontSize: 11.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
-                  ),
-                ),
-                const SizedBox(height: 6.0),
-                ...primitives.map((primId) {
-                  final label = primId.startsWith('schema:')
-                      ? primId.substring(7)
-                      : primId;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.edit_note,
-                        color: Colors.green,
-                        size: 18.0,
-                      ),
-                      title: Text(
-                        'Add "${label}" Field',
-                        style: const TextStyle(fontSize: 12.5),
-                      ),
-                      dense: true,
-                      onTap: () {
-                        appState.addPropertyToEntity(
-                          entity,
-                          propId,
-                          primId == 'schema:Boolean' ? false : '',
-                        );
-                        Navigator.pop(context);
-                      },
-                    ),
-                  );
-                }).toList(),
-              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1775,6 +1866,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  List<String> _getSubclassesOf(String classId) {
+    final List<String> subclasses = [];
+    final classes = SchemaService.instance.classes;
+    classes.forEach((id, cls) {
+      if (id != classId && SchemaService.instance.isSubclassOf(id, classId)) {
+        subclasses.add(id);
+      }
+    });
+    subclasses.sort((a, b) => a.compareTo(b));
+    return subclasses;
+  }
+
   void _onPropertySelected(
     AppState appState,
     SchemaEntity entity,
@@ -1792,62 +1895,170 @@ class _HomePageState extends State<HomePage> {
           r == 'schema:DateTime';
       return !isPrim;
     }).toList();
+
     if (nonPrimitiveClasses.isNotEmpty) {
+      // Collect all subclasses for each of the nonPrimitiveClasses
+      final Map<String, List<String>> classToSubclasses = {};
+      final Set<String> allSubclassIds = {};
+      for (var baseClass in nonPrimitiveClasses) {
+        final subs = _getSubclassesOf(baseClass);
+        classToSubclasses[baseClass] = subs;
+        allSubclassIds.addAll(subs);
+      }
+
+      final List<MapEntry<String, String>> typeOptions = [];
+      // First add the direct expected classes
+      for (var baseClass in nonPrimitiveClasses) {
+        typeOptions.add(MapEntry(baseClass, 'Base expected type'));
+      }
+      // Then add the subclasses that are not already listed as direct expected classes
+      for (var baseClass in nonPrimitiveClasses) {
+        final subs = classToSubclasses[baseClass] ?? [];
+        for (var sub in subs) {
+          if (!nonPrimitiveClasses.contains(sub)) {
+            final baseLabel = baseClass.startsWith('schema:') ? baseClass.substring(7) : baseClass;
+            typeOptions.add(MapEntry(sub, 'Subtype of $baseLabel'));
+          }
+        }
+      }
+
+      // Deduplicate options if a class is subclass of multiple parent classes
+      final Set<String> seenIds = {};
+      final List<MapEntry<String, String>> uniqueTypeOptions = [];
+      for (var entry in typeOptions) {
+        if (!seenIds.contains(entry.key)) {
+          seenIds.add(entry.key);
+          uniqueTypeOptions.add(entry);
+        }
+      }
+
+      String searchVal = '';
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Select Input Type for "${prop.label}"'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'This property supports structured objects. Choose whether you want to add a nested schema object or write a simple text value.',
-                style: TextStyle(fontSize: 13.0),
-              ),
-              const SizedBox(height: 16.0),
-              ...nonPrimitiveClasses.map((clsId) {
-                final label = clsId.startsWith('schema:')
-                    ? clsId.substring(7)
-                    : clsId;
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.playlist_add_circle_outlined,
-                      color: Colors.blue,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            final filteredOptions = uniqueTypeOptions.where((option) {
+              final label = option.key.startsWith('schema:') ? option.key.substring(7) : option.key;
+              final query = searchVal.toLowerCase();
+              return label.toLowerCase().contains(query) || option.value.toLowerCase().contains(query);
+            }).toList();
+
+            return AlertDialog(
+              title: Text('Select Input Type for "${prop.label}"'),
+              content: SizedBox(
+                width: 480.0,
+                height: 400.0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'This property supports structured objects. Select an expected type or a more specific subtype:',
+                      style: TextStyle(fontSize: 12.0),
                     ),
-                    title: Text('Create Nested "${label}" Object'),
-                    onTap: () {
-                      final nested = SchemaEntity(
-                        id: 'nest_${DateTime.now().microsecondsSinceEpoch}',
-                        type: clsId,
-                        properties: {},
-                      );
-                      appState.addPropertyToEntity(entity, prop.id, nested);
-                      Navigator.pop(context);
-                    },
-                  ),
-                );
-              }).toList(),
-              Card(
-                margin: const EdgeInsets.symmetric(vertical: 4.0),
-                child: ListTile(
-                  leading: const Icon(Icons.edit_note, color: Colors.green),
-                  title: const Text('Add simple text input field'),
-                  onTap: () {
-                    appState.addPropertyToEntity(entity, prop.id, '');
-                    Navigator.pop(context);
-                  },
+                    const SizedBox(height: 12.0),
+                    TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Search types & subclasses...',
+                        prefixIcon: Icon(Icons.search, size: 20.0),
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) {
+                        setDialogState(() {
+                          searchVal = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12.0),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          ...filteredOptions.map((option) {
+                            final clsId = option.key;
+                            final isSubclass = option.value != 'Base expected type';
+                            final label = clsId.startsWith('schema:') ? clsId.substring(7) : clsId;
+                            final comment = SchemaService.instance.classes[clsId]?.comment ?? '';
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: ListTile(
+                                leading: Icon(
+                                  isSubclass ? Icons.subdirectory_arrow_right : Icons.playlist_add_circle_outlined,
+                                  color: isSubclass ? Colors.orange : Colors.blue,
+                                ),
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      'Create "${label}"',
+                                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(width: 6.0),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
+                                      decoration: BoxDecoration(
+                                        color: isSubclass ? Colors.orange.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8.0),
+                                      ),
+                                      child: Text(
+                                        option.value,
+                                        style: TextStyle(
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSubclass ? Colors.orange.shade700 : Colors.blue.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: comment.isNotEmpty
+                                    ? Text(
+                                        comment,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 11.0),
+                                      )
+                                    : null,
+                                dense: true,
+                                onTap: () {
+                                  final nested = SchemaEntity(
+                                    id: 'nest_${DateTime.now().microsecondsSinceEpoch}',
+                                    type: clsId,
+                                    properties: {},
+                                  );
+                                  appState.addPropertyToEntity(entity, prop.id, nested);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                          Card(
+                            margin: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: ListTile(
+                              leading: const Icon(Icons.edit_note, color: Colors.green),
+                              title: const Text(
+                                'Add simple text input field',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                              ),
+                              dense: true,
+                              onTap: () {
+                                appState.addPropertyToEntity(entity, prop.id, '');
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
         ),
       );
     } else {
