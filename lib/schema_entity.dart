@@ -1,8 +1,17 @@
 import 'package:jsonld/schema_value.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:jsonld/schema_service.dart';
 
 @NowaGenerated()
 class SchemaEntity {
+  bool _isEnumerationValue(String value) {
+    for (var list in SchemaService.instance.enumerationValues.values) {
+      if (list.contains(value)) {
+        return true;
+      }
+    }
+    return false;
+  }
   SchemaEntity({
     required this.id,
     required this.type,
@@ -40,6 +49,13 @@ class SchemaEntity {
           jsonValues.add((val.value as SchemaEntity).toJsonLd(isRoot: false));
         } else if (val.value is Map && (val.value as Map).containsKey('@id')) {
           jsonValues.add({'@id': '#${(val.value as Map)['@id']}'});
+        } else if (val.value is String) {
+          final String strVal = val.value as String;
+          if (strVal.startsWith('schema:') && _isEnumerationValue(strVal)) {
+            jsonValues.add('https://schema.org/${strVal.substring(7)}');
+          } else {
+            jsonValues.add(val.value);
+          }
         } else {
           jsonValues.add(val.value);
         }
@@ -189,13 +205,36 @@ class SchemaEntity {
             );
           }
         } else if (singleVal != null) {
+          var parsedVal = singleVal;
+          if (singleVal is String) {
+            final String s = singleVal.trim();
+            if (s.startsWith('https://schema.org/') || s.startsWith('http://schema.org/')) {
+              final String suffix = s.substring(s.lastIndexOf('/') + 1);
+              final String candidate = 'schema:$suffix';
+              // Check if we can find this candidate in enumerationValues
+              // If empty, fall back to matching by parsing
+              bool matched = false;
+              for (var list in SchemaService.instance.enumerationValues.values) {
+                if (list.contains(candidate)) {
+                  matched = true;
+                  break;
+                }
+              }
+              if (matched || suffix.isNotEmpty) {
+                // If it looks like a capital letter enum value (e.g. InStock, Monday, CreditCard), convert to schema: format
+                if (suffix.isNotEmpty && suffix[0] == suffix[0].toUpperCase()) {
+                  parsedVal = candidate;
+                }
+              }
+            }
+          }
           values.add(
             SchemaValue(
               id:
                   DateTime.now().microsecondsSinceEpoch.toString() +
                   '_' +
                   singleVal.hashCode.toString(),
-              value: singleVal,
+              value: parsedVal,
             ),
           );
         }
