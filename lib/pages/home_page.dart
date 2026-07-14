@@ -3,6 +3,7 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:jsonld/globals/app_state.dart';
 import 'package:jsonld/schema_service.dart';
 import 'package:jsonld/globals/themes.dart';
+import 'package:jsonld/components/banner_ad_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:jsonld/schema_entity.dart';
 import 'package:jsonld/schema_value.dart';
@@ -32,9 +33,13 @@ class _HomePageState extends State<HomePage> {
 
   final TextEditingController _customPropController = TextEditingController();
 
+  final TextEditingController _searchMarkupController = TextEditingController();
+
   String _propertySearchQuery = '';
 
   String _classSearchQuery = '';
+
+  String _markupSearchQuery = '';
 
   bool _showTreeView = false;
 
@@ -44,16 +49,6 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppState.of(context, listen: false).initSchemaService();
     });
-  }
-
-  @override
-  void dispose() {
-    _importController.dispose();
-    _searchClassController.dispose();
-    _searchPropertyController.dispose();
-    _docNameController.dispose();
-    _customPropController.dispose();
-    super.dispose();
   }
 
   List<String> _getInheritancePath(String classId) {
@@ -154,8 +149,8 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.hub_outlined, size: 28),
-            const SizedBox(width: 12),
+            const Icon(Icons.hub_outlined, size: 28.0),
+            const SizedBox(width: 12.0),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +158,10 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   const Text(
                     'Schema.org Visual Editor',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18.0,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
@@ -171,7 +169,7 @@ class _HomePageState extends State<HomePage> {
                         ? 'Fully compliant with current https://schema.org JSON-LD specification'
                         : 'Visual Schema IDE',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 10.0,
                       fontWeight: FontWeight.normal,
                       color: Theme.of(context).colorScheme.outline,
                     ),
@@ -182,7 +180,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             if (isWide) ...[
-              const SizedBox(width: 16),
+              const SizedBox(width: 16.0),
               _buildStatusBadge(appState),
             ],
           ],
@@ -192,7 +190,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Text(
                 'Tree View',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 12.0, fontWeight: FontWeight.bold),
               ),
               Switch(
                 value: _showTreeView,
@@ -204,7 +202,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 12.0),
           IconButton(
             icon: Icon(
               appState.theme == darkTheme ? Icons.light_mode : Icons.dark_mode,
@@ -221,7 +219,7 @@ class _HomePageState extends State<HomePage> {
             tooltip: 'Reset Active Document',
             onPressed: _confirmReset,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 16.0),
         ],
       ),
       body: appState.rootEntity == null
@@ -232,15 +230,21 @@ class _HomePageState extends State<HomePage> {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(width: 320, child: _buildLeftSidebar(appState)),
-                      const VerticalDivider(width: 1, thickness: 1),
+                      SizedBox(
+                        width: 320.0,
+                        child: _buildLeftSidebar(appState),
+                      ),
+                      const VerticalDivider(width: 1.0, thickness: 1.0),
                       Expanded(
                         child: _showTreeView
                             ? _buildTreeViewWorkspace(appState)
                             : _buildWorkspace(appState),
                       ),
-                      const VerticalDivider(width: 1, thickness: 1),
-                      SizedBox(width: 440, child: _buildRightSidebar(appState)),
+                      const VerticalDivider(width: 1.0, thickness: 1.0),
+                      SizedBox(
+                        width: 440.0,
+                        child: _buildRightSidebar(appState),
+                      ),
                     ],
                   );
                 } else {
@@ -285,18 +289,19 @@ class _HomePageState extends State<HomePage> {
                 }
               },
             ),
+      bottomNavigationBar: const SafeArea(child: BannerAdWidget()),
     );
   }
 
   Widget _buildStatusBadge(AppState appState) {
     final bool loaded = SchemaService.instance.isFullSchemaLoaded;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
       decoration: BoxDecoration(
         color: loaded
             ? Theme.of(context).colorScheme.primaryContainer
             : Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.0),
         border: Border.all(
           color: loaded
               ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
@@ -308,18 +313,18 @@ class _HomePageState extends State<HomePage> {
         children: [
           Icon(
             loaded ? Icons.verified : Icons.cloud_download,
-            size: 14,
+            size: 14.0,
             color: loaded
                 ? Theme.of(context).colorScheme.onPrimaryContainer
                 : Theme.of(context).colorScheme.onErrorContainer,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 6.0),
           Text(
             loaded
                 ? 'Dynamic Specs Active (${SchemaService.instance.classes.length} Classes, ${SchemaService.instance.properties.length} Props, ${SchemaService.instance.enumerationValues.length} Enums)'
                 : 'Downloading Specs...',
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 10.0,
               fontWeight: FontWeight.bold,
               color: loaded
                   ? Theme.of(context).colorScheme.onPrimaryContainer
@@ -331,236 +336,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildLeftSidebar(AppState appState) {
-    final allCategoryClasses = SchemaService.instance.classes.values.toList();
-    final filteredClasses = allCategoryClasses.where((cls) {
-      if (_classSearchQuery.isEmpty) {
-        return true;
-      }
-      return cls.label.toLowerCase().contains(
-            _classSearchQuery.toLowerCase(),
-          ) ||
-          cls.id.toLowerCase().contains(_classSearchQuery.toLowerCase());
-    }).toList();
-    return Container(
-      color:
-          Theme.of(context).colorScheme.surfaceContainerLow ??
-          Theme.of(context).colorScheme.surface.withOpacity(0.5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  'My Active Markups',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.add_box_outlined, size: 20),
-                  tooltip: 'Create New Document',
-                  onPressed: () => _showCreateDocDialog(appState),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: 140,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ListView.builder(
-              itemCount: appState.documents.length,
-              itemBuilder: (context, index) {
-                final doc = appState.documents[index];
-                final isSelected = appState.selectedDocumentIndex == index;
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  elevation: 0,
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Theme.of(context).colorScheme.surfaceContainerHigh,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.only(left: 12, right: 6),
-                    dense: true,
-                    title: Text(
-                      doc.name,
-                      style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 12,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      doc.type.replaceAll('schema:', ''),
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                    onTap: () => appState.selectDocument(index),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, size: 14),
-                          tooltip: 'Rename',
-                          onPressed: () =>
-                              _showRenameDialog(appState, index, doc.name),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy, size: 14),
-                          tooltip: 'Duplicate',
-                          onPressed: () => appState.duplicateDocument(index),
-                        ),
-                        if (appState.documents.length > 1)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              size: 14,
-                              color: Colors.redAccent,
-                            ),
-                            tooltip: 'Delete',
-                            onPressed: () => appState.deleteDocument(index),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text(
-              'Instantiate New Class Type',
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _searchClassController,
-              decoration: InputDecoration(
-                hintText: 'Search 800+ types (e.g. Recipe)...',
-                prefixIcon: const Icon(Icons.search, size: 18),
-                suffixIcon: _classSearchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 16),
-                        onPressed: () {
-                          _searchClassController.clear();
-                          setState(() {
-                            _classSearchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                isDense: true,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  _classSearchQuery = val;
-                });
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: filteredClasses.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No classes found.',
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        fontSize: 12,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: filteredClasses.length,
-                    itemBuilder: (context, index) {
-                      final cls = filteredClasses[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        elevation: 0,
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: ListTile(
-                          title: Text(
-                            cls.label,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.5,
-                            ),
-                          ),
-                          subtitle: Text(
-                            cls.comment,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 10.5),
-                          ),
-                          dense: true,
-                          trailing: const Icon(
-                            Icons.add_circle_outline,
-                            size: 14,
-                          ),
-                          onTap: () {
-                            appState.createNewDocument(
-                              'New ${cls.label} Document',
-                              cls.id,
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Created new ${cls.label} document successfully!',
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildWorkspace(AppState appState) {
     final root = appState.rootEntity;
     final path = _getInheritancePath(root!.type);
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 8.0,
+            ),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8.0),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.account_tree,
-                  size: 16,
+                  size: 16.0,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 8.0),
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -572,7 +373,7 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               segment,
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 11.0,
                                 fontWeight: isLast
                                     ? FontWeight.bold
                                     : FontWeight.normal,
@@ -584,7 +385,7 @@ class _HomePageState extends State<HomePage> {
                             if (!isLast)
                               const Icon(
                                 Icons.chevron_right,
-                                size: 12,
+                                size: 12.0,
                                 color: Colors.grey,
                               ),
                           ],
@@ -594,14 +395,15 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 TextButton.icon(
-                  icon: const Icon(Icons.open_in_new, size: 12),
+                  icon: const Icon(Icons.open_in_new, size: 12.0),
                   label: const Text(
                     'Documentation',
-                    style: TextStyle(fontSize: 11),
+                    style: TextStyle(fontSize: 11.0),
                   ),
                   onPressed: () {
                     final cleanType = root!.type.replaceAll('schema:', '');
-                    final url = 'https://schema.org/${cleanType}';
+                    final url =
+                        'https://schema.org/docs/search_results.html?q=${cleanType}';
                     Clipboard.setData(ClipboardData(text: url));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -616,7 +418,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 16.0),
           Row(
             children: [
               Expanded(
@@ -629,22 +431,25 @@ class _HomePageState extends State<HomePage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 4.0),
                     Text(
                       'Visual Builder • ${root?.type}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(
+                        fontSize: 12.0,
+                        color: Colors.grey,
+                      ),
                     ),
                   ],
                 ),
               ),
               ElevatedButton.icon(
-                icon: const Icon(Icons.add_circle_outline, size: 18),
+                icon: const Icon(Icons.add_circle_outline, size: 18.0),
                 label: const Text('Add Property'),
                 onPressed: () => _showAddPropertyDialog(appState, root!),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 12.0),
           Expanded(
             child: SingleChildScrollView(
               child: _buildEntityEditorCard(appState, root!, isRoot: true),
@@ -658,7 +463,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildTreeViewWorkspace(AppState appState) {
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -668,18 +473,18 @@ class _HomePageState extends State<HomePage> {
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 4.0),
           const Text(
             'Hierarchical visualization of your current Schema.org structured document.',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12.0, color: Colors.grey),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 16.0),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.0),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outlineVariant,
                 ),
@@ -705,11 +510,11 @@ class _HomePageState extends State<HomePage> {
         ? entity.type.substring(7)
         : entity.type;
     return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 0.0,
+      margin: const EdgeInsets.symmetric(vertical: 6.0),
       color: Theme.of(context).colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8.0),
         side: BorderSide(
           color: Theme.of(context).colorScheme.outlineVariant,
           width: 0.8,
@@ -725,18 +530,24 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               '${keyName}: ',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13.0,
+              ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8.0,
+                vertical: 2.0,
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8.0),
               ),
               child: Text(
                 typeLabel,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 11.0,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
@@ -746,11 +557,14 @@ class _HomePageState extends State<HomePage> {
         ),
         subtitle: Text(
           '${entity.properties.length} active fields',
-          style: const TextStyle(fontSize: 11),
+          style: const TextStyle(fontSize: 11.0),
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: entity.properties.entries.map((entry) {
@@ -770,29 +584,29 @@ class _HomePageState extends State<HomePage> {
                     }
                     return Padding(
                       padding: const EdgeInsets.symmetric(
-                        vertical: 4,
-                        horizontal: 12,
+                        vertical: 4.0,
+                        horizontal: 12.0,
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.arrow_right_alt,
-                            size: 14,
+                            size: 14.0,
                             color: Theme.of(context).colorScheme.secondary,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 8.0),
                           Text(
                             '${propName}: ',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: 12.0,
                             ),
                           ),
                           Expanded(
                             child: Text(
                               val.value.toString() ?? '',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 12.0,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -822,19 +636,19 @@ class _HomePageState extends State<HomePage> {
     final schemaClass = SchemaService.instance.classes[entity.type];
     final classComment = schemaClass?.comment ?? 'No description available.';
     return Card(
-      elevation: isRoot ? 1 : 0,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: isRoot ? 1.0 : 0.0,
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.0),
         side: BorderSide(
           color: isRoot
               ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
               : Theme.of(context).colorScheme.outline.withOpacity(0.15),
-          width: isRoot ? 1.5 : 1,
+          width: isRoot ? 1.5 : 1.0,
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -843,9 +657,9 @@ class _HomePageState extends State<HomePage> {
                 Icon(
                   isRoot ? Icons.settings_ethernet : Icons.layers_outlined,
                   color: Theme.of(context).colorScheme.primary,
-                  size: 20,
+                  size: 20.0,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 8.0),
                 Text(
                   isRoot
                       ? 'Root Entity: @type = ${typeLabel}'
@@ -861,14 +675,14 @@ class _HomePageState extends State<HomePage> {
                     icon: const Icon(
                       Icons.delete_outline,
                       color: Colors.redAccent,
-                      size: 20,
+                      size: 20.0,
                     ),
                     tooltip: 'Delete nested object',
                     onPressed: () => _confirmDeleteNested(appState, entity),
                   ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 6.0),
             Text(
               classComment,
               style: TextStyle(
@@ -879,31 +693,31 @@ class _HomePageState extends State<HomePage> {
                 ).colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 12.0),
             const Divider(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 8.0),
             if (entity.properties.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16.0),
                 child: Center(
                   child: Column(
                     children: [
                       Icon(
                         Icons.playlist_add,
-                        size: 40,
+                        size: 40.0,
                         color: Theme.of(context).colorScheme.outline,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 8.0),
                       const Text(
                         'No properties configured.',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.0,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 8.0),
                       TextButton.icon(
-                        icon: const Icon(Icons.add, size: 16),
+                        icon: const Icon(Icons.add, size: 16.0),
                         label: const Text('Add property'),
                         onPressed: () =>
                             _showAddPropertyDialog(appState, entity),
@@ -919,9 +733,9 @@ class _HomePageState extends State<HomePage> {
                 return _buildPropertyRow(appState, entity, propId, values);
               }).toList(),
             if (entity.properties.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 12.0),
               OutlinedButton.icon(
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(Icons.add, size: 16.0),
                 label: Text('Add field to ${typeLabel}'),
                 onPressed: () => _showAddPropertyDialog(appState, entity),
               ),
@@ -945,7 +759,7 @@ class _HomePageState extends State<HomePage> {
     final comment = propDef?.comment ?? 'Custom user extension field';
     final List<String> ranges = propDef?.ranges ?? [];
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -963,10 +777,10 @@ class _HomePageState extends State<HomePage> {
                           fontSize: 13.5,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 4.0),
                       Icon(
                         Icons.info_outline,
-                        size: 13,
+                        size: 13.0,
                         color: Theme.of(context).colorScheme.outline,
                       ),
                     ],
@@ -974,7 +788,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               if (ranges.isNotEmpty) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: 8.0),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: ranges.take(2).map((range) {
@@ -990,13 +804,13 @@ class _HomePageState extends State<HomePage> {
                         ? range.substring(7)
                         : range;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 2.0),
                       child: ActionChip(
                         padding: EdgeInsets.zero,
                         label: Text(
                           isPrim ? shortLabel : '+${shortLabel}',
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 9.0,
                             fontWeight: FontWeight.bold,
                             color: isPrim
                                 ? Theme.of(
@@ -1037,14 +851,14 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
               IconButton(
-                icon: const Icon(Icons.add_circle_outline, size: 16),
+                icon: const Icon(Icons.add_circle_outline, size: 16.0),
                 tooltip: 'Add compliant value',
                 onPressed: () {
                   _onAddValuePressed(appState, entity, propId);
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, size: 16),
+                icon: const Icon(Icons.delete_outline, size: 16.0),
                 tooltip: 'Remove field',
                 onPressed: () {
                   appState.removePropertyFromEntity(entity, propId);
@@ -1055,7 +869,7 @@ class _HomePageState extends State<HomePage> {
           ...values
               .map(
                 (v) => Padding(
-                  padding: const EdgeInsets.only(left: 8, bottom: 6),
+                  padding: const EdgeInsets.only(left: 8.0, bottom: 6.0),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1066,7 +880,7 @@ class _HomePageState extends State<HomePage> {
                         IconButton(
                           icon: const Icon(
                             Icons.remove_circle_outline,
-                            size: 16,
+                            size: 16.0,
                             color: Colors.red,
                           ),
                           onPressed: () {
@@ -1078,7 +892,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               )
               .toList(),
-          const Divider(height: 16, thickness: 0.5),
+          const Divider(height: 16.0, thickness: 0.5),
         ],
       ),
     );
@@ -1131,37 +945,37 @@ class _HomePageState extends State<HomePage> {
       builder: (context) => AlertDialog(
         title: const Text('Add Value - Select Compliant Type'),
         content: SizedBox(
-          width: 440,
+          width: 440.0,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'To ensure 100% Schema.org semantic compliance, choose a type from this property\'s official expected ranges:',
-                style: TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: 12.0),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 16.0),
               if (classes.isNotEmpty) ...[
                 const Text(
                   'Structured Objects:',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.0,
                     fontWeight: FontWeight.bold,
                     color: Colors.blueGrey,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 6.0),
                 ...classes.map((clsId) {
                   final label = clsId.startsWith('schema:')
                       ? clsId.substring(7)
                       : clsId;
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
                     child: ListTile(
                       leading: const Icon(
                         Icons.playlist_add_circle_outlined,
                         color: Colors.blue,
-                        size: 18,
+                        size: 18.0,
                       ),
                       title: Text(
                         'Create Nested "${label}" Object',
@@ -1182,27 +996,27 @@ class _HomePageState extends State<HomePage> {
                 }).toList(),
               ],
               if (primitives.isNotEmpty) ...[
-                if (classes.isNotEmpty) const SizedBox(height: 12),
+                if (classes.isNotEmpty) const SizedBox(height: 12.0),
                 const Text(
                   'Simple Values:',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.0,
                     fontWeight: FontWeight.bold,
                     color: Colors.blueGrey,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 6.0),
                 ...primitives.map((primId) {
                   final label = primId.startsWith('schema:')
                       ? primId.substring(7)
                       : primId;
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
                     child: ListTile(
                       leading: const Icon(
                         Icons.edit_note,
                         color: Colors.green,
-                        size: 18,
+                        size: 18.0,
                       ),
                       title: Text(
                         'Add "${label}" Field',
@@ -1248,28 +1062,28 @@ class _HomePageState extends State<HomePage> {
       final docName = mapVal['docName'] ?? 'Linked Relation';
       return Card(
         color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.25),
-        elevation: 0,
+        elevation: 0.0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8.0),
           side: BorderSide(
             color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
           child: Row(
             children: [
               Icon(
                 Icons.link,
-                size: 16,
+                size: 16.0,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 8.0),
               Expanded(
                 child: Text(
                   'Relation: ${docName}',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
@@ -1279,7 +1093,7 @@ class _HomePageState extends State<HomePage> {
               IconButton(
                 icon: const Icon(
                   Icons.link_off,
-                  size: 16,
+                  size: 16.0,
                   color: Colors.redAccent,
                 ),
                 tooltip: 'Disconnect relation',
@@ -1327,16 +1141,19 @@ class _HomePageState extends State<HomePage> {
         isExpanded: true,
         decoration: const InputDecoration(
           isDense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12.0,
+            vertical: 10.0,
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderRadius: BorderRadius.all(Radius.circular(8.0)),
           ),
         ),
         items: dropdownItems.map((opt) {
           final label = opt.startsWith('schema:') ? opt.substring(7) : opt;
           return DropdownMenuItem<String>(
             value: opt,
-            child: Text(label, style: const TextStyle(fontSize: 13)),
+            child: Text(label, style: const TextStyle(fontSize: 13.0)),
           );
         }).toList(),
         onChanged: (newVal) {
@@ -1368,8 +1185,11 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
-            const SizedBox(width: 8),
-            Text(val ? 'True' : 'False', style: const TextStyle(fontSize: 13)),
+            const SizedBox(width: 8.0),
+            Text(
+              val ? 'True' : 'False',
+              style: const TextStyle(fontSize: 13.0),
+            ),
           ],
         );
       } else {
@@ -1390,14 +1210,14 @@ class _HomePageState extends State<HomePage> {
         editorWidget = TextField(
           controller: controller,
           decoration: InputDecoration(
-            prefixIcon: inputIcon != null ? Icon(inputIcon, size: 14) : null,
+            prefixIcon: inputIcon != null ? Icon(inputIcon, size: 14.0) : null,
             hintText: 'Enter value...',
             isDense: true,
             suffixIcon:
                 (ranges.contains('schema:Date') ||
                     ranges.contains('schema:DateTime'))
                 ? IconButton(
-                    icon: const Icon(Icons.date_range, size: 14),
+                    icon: const Icon(Icons.date_range, size: 14.0),
                     onPressed: () async {
                       final picked = await showDatePicker(
                         context: context,
@@ -1421,7 +1241,7 @@ class _HomePageState extends State<HomePage> {
                   )
                 : null,
             border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
+              borderRadius: BorderRadius.all(Radius.circular(8.0)),
             ),
           ),
           keyboardType: ranges.contains('schema:Number')
@@ -1454,12 +1274,12 @@ class _HomePageState extends State<HomePage> {
       return Row(
         children: [
           Expanded(child: editorWidget),
-          const SizedBox(width: 8),
+          const SizedBox(width: 8.0),
           PopupMenuButton<SchemaEntity>(
             icon: Icon(
               Icons.link,
               color: Theme.of(context).colorScheme.primary,
-              size: 20,
+              size: 20.0,
             ),
             tooltip: 'Link to a semantically compliant open markup document',
             onSelected: (doc) {
@@ -1478,13 +1298,13 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Icon(
                       Icons.insert_drive_file_outlined,
-                      size: 14,
+                      size: 14.0,
                       color: Theme.of(context).colorScheme.secondary,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 8.0),
                     Text(
                       '${doc.name} (${typeLabel})',
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: 12.0),
                     ),
                   ],
                 ),
@@ -1516,7 +1336,7 @@ class _HomePageState extends State<HomePage> {
       color:
           Theme.of(context).colorScheme.surfaceContainerHigh ??
           Theme.of(context).colorScheme.surface.withOpacity(0.95),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1530,7 +1350,7 @@ class _HomePageState extends State<HomePage> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.copy, size: 16),
+                icon: const Icon(Icons.copy, size: 16.0),
                 tooltip: 'Copy JSON-LD',
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: appState.jsonLdOutput));
@@ -1543,7 +1363,7 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.download, size: 16),
+                icon: const Icon(Icons.download, size: 16.0),
                 tooltip: 'Download .json file',
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: appState.jsonLdOutput));
@@ -1558,21 +1378,21 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.file_upload, size: 16),
+                icon: const Icon(Icons.file_upload, size: 16.0),
                 tooltip: 'Import JSON-LD Schema',
                 onPressed: () => _showImportDialog(appState),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 12.0),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
                 color:
                     Theme.of(context).colorScheme.surfaceContainerLowest ??
                     Colors.black87,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8.0),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outlineVariant,
                 ),
@@ -1594,12 +1414,12 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 12.0),
           Card(
-            elevation: 0,
+            elevation: 0.0,
             color: Theme.of(context).colorScheme.surfaceContainer,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1607,10 +1427,10 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Icon(
                         Icons.shield_outlined,
-                        size: 15,
+                        size: 15.0,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 8.0),
                       const Text(
                         'Google Rich Results Validator',
                         style: TextStyle(
@@ -1620,9 +1440,9 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 6.0),
                   const Text(
-                    'This document contains schema.org context fields. You can validate it directly on Google\'s Rich Results Test tool to boost SEO rankings!',
+                    'This document contains schema.org context fields. You can validate it directly on Google\'s Rich Results Test tool to boost SEO rankings! \n https://search.google.com/test/rich-results',
                     style: TextStyle(
                       fontSize: 10.5,
                       height: 1.3,
@@ -1786,8 +1606,8 @@ class _HomePageState extends State<HomePage> {
           return AlertDialog(
             title: Text('Configure Properties for ${typeLabel}'),
             content: SizedBox(
-              width: 520,
-              height: 480,
+              width: 520.0,
+              height: 480.0,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -1795,15 +1615,15 @@ class _HomePageState extends State<HomePage> {
                     const Text(
                       '💡 Recommended for SEO:',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.0,
                         fontWeight: FontWeight.bold,
                         color: Colors.blueGrey,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 6.0),
                     Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
+                      spacing: 6.0,
+                      runSpacing: 6.0,
                       children: recProps.map((prop) {
                         final isAdded = entity.properties.containsKey(prop.id);
                         return ActionChip(
@@ -1811,7 +1631,7 @@ class _HomePageState extends State<HomePage> {
                           label: Text(
                             prop.label,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 10.0,
                               fontWeight: FontWeight.bold,
                               decoration: isAdded
                                   ? TextDecoration.lineThrough
@@ -1822,20 +1642,20 @@ class _HomePageState extends State<HomePage> {
                             context,
                           ).colorScheme.primaryContainer.withOpacity(0.4),
                           onPressed: () {
-                            _onPropertySelected(appState, entity, prop);
                             Navigator.pop(context);
+                            _onPropertySelected(appState, entity, prop);
                           },
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 12.0),
                     const Divider(),
                   ],
                   TextField(
                     controller: _searchPropertyController,
                     decoration: const InputDecoration(
                       hintText: 'Search hundreds of properties...',
-                      prefixIcon: Icon(Icons.search, size: 20),
+                      prefixIcon: Icon(Icons.search, size: 20.0),
                       isDense: true,
                       border: OutlineInputBorder(),
                     ),
@@ -1845,7 +1665,7 @@ class _HomePageState extends State<HomePage> {
                       });
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 12.0),
                   Expanded(
                     child: filteredProps.isEmpty
                         ? Center(
@@ -1854,17 +1674,17 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 const Icon(
                                   Icons.extension_off_outlined,
-                                  size: 36,
+                                  size: 36.0,
                                   color: Colors.grey,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 8.0),
                                 const Text(
                                   'No standard properties found.',
                                   style: TextStyle(fontStyle: FontStyle.italic),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 12.0),
                                 ElevatedButton.icon(
-                                  icon: const Icon(Icons.add, size: 16),
+                                  icon: const Icon(Icons.add, size: 16.0),
                                   label: const Text('Add Custom User Field'),
                                   onPressed: () {
                                     Navigator.pop(context);
@@ -1897,21 +1717,21 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                     if (isAlreadyAdded) ...[
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 8.0),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 1,
+                                          horizontal: 6.0,
+                                          vertical: 1.0,
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.grey.shade300,
                                           borderRadius: BorderRadius.circular(
-                                            8,
+                                            8.0,
                                           ),
                                         ),
                                         child: const Text(
                                           'Added',
-                                          style: TextStyle(fontSize: 10),
+                                          style: TextStyle(fontSize: 10.0),
                                         ),
                                       ),
                                     ],
@@ -1919,13 +1739,13 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 subtitle: Text(
                                   '${prop.comment}\nExpected: ${prop.ranges.map((r) => r.startsWith('schema:') ? r.substring(7) : r).join(', ')}',
-                                  style: const TextStyle(fontSize: 11),
+                                  style: const TextStyle(fontSize: 11.0),
                                 ),
                                 dense: true,
-                                trailing: const Icon(Icons.add, size: 16),
+                                trailing: const Icon(Icons.add, size: 16.0),
                                 onTap: () {
-                                  _onPropertySelected(appState, entity, prop);
                                   Navigator.pop(context);
+                                  _onPropertySelected(appState, entity, prop);
                                 },
                               );
                             },
@@ -1937,7 +1757,7 @@ class _HomePageState extends State<HomePage> {
             actions: [
               if (filteredProps.isNotEmpty)
                 TextButton.icon(
-                  icon: const Icon(Icons.add_circle_outline, size: 14),
+                  icon: const Icon(Icons.add_circle_outline, size: 14.0),
                   label: const Text('Add Custom Field'),
                   onPressed: () {
                     Navigator.pop(context);
@@ -1982,15 +1802,15 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Text(
                 'This property supports structured objects. Choose whether you want to add a nested schema object or write a simple text value.',
-                style: TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 13.0),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 16.0),
               ...nonPrimitiveClasses.map((clsId) {
                 final label = clsId.startsWith('schema:')
                     ? clsId.substring(7)
                     : clsId;
                 return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
                   child: ListTile(
                     leading: const Icon(
                       Icons.playlist_add_circle_outlined,
@@ -2010,7 +1830,7 @@ class _HomePageState extends State<HomePage> {
                 );
               }).toList(),
               Card(
-                margin: const EdgeInsets.symmetric(vertical: 4),
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
                 child: ListTile(
                   leading: const Icon(Icons.edit_note, color: Colors.green),
                   title: const Text('Add simple text input field'),
@@ -2048,9 +1868,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Text(
               'Enter the key name for your custom metadata extension property. It will be added to the output document.',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12.0),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 12.0),
             TextField(
               controller: _customPropController,
               autofocus: true,
@@ -2101,9 +1921,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Text(
               'Give your document a descriptive name. The document will start with a default Person type, which you can easily change inside the builder.',
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12.0),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 12.0),
             TextField(
               controller: _docNameController,
               autofocus: true,
@@ -2174,22 +1994,22 @@ class _HomePageState extends State<HomePage> {
       builder: (context) => AlertDialog(
         title: const Text('Import JSON-LD Schema'),
         content: SizedBox(
-          width: 500,
-          height: 350,
+          width: 500.0,
+          height: 350.0,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'Paste valid JSON-LD structured data below. The visual editor will parse it and construct editable nodes automatically!',
-                style: TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 13.0),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 12.0),
               Expanded(
                 child: TextField(
                   controller: _importController,
                   maxLines: null,
                   minLines: 10,
-                  style: const TextStyle(fontFamily: 'Courier', fontSize: 12),
+                  style: const TextStyle(fontFamily: 'Courier', fontSize: 12.0),
                   decoration: const InputDecoration(
                     hintText:
                         '{\n  "@context": "https://schema.org",\n  "@type": "Person",\n  "name": "Jane Doe"\n}',
@@ -2229,6 +2049,294 @@ class _HomePageState extends State<HomePage> {
               }
             },
             child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _importController.dispose();
+    _searchClassController.dispose();
+    _searchPropertyController.dispose();
+    _docNameController.dispose();
+    _customPropController.dispose();
+    _searchMarkupController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildLeftSidebar(AppState appState) {
+    final allCategoryClasses = SchemaService.instance.classes.values.toList();
+    final filteredClasses = allCategoryClasses.where((cls) {
+      if (_classSearchQuery.isEmpty) {
+        return true;
+      }
+      return cls.label.toLowerCase().contains(
+            _classSearchQuery.toLowerCase(),
+          ) ||
+          cls.id.toLowerCase().contains(_classSearchQuery.toLowerCase());
+    }).toList();
+    final filteredDocuments = appState.documents.where((doc) {
+      if (_markupSearchQuery.isEmpty) {
+        return true;
+      }
+      return doc.name.toLowerCase().contains(
+            _markupSearchQuery.toLowerCase(),
+          ) ||
+          doc.type.toLowerCase().contains(_markupSearchQuery.toLowerCase());
+    }).toList();
+    return Container(
+      color:
+          Theme.of(context).colorScheme.surfaceContainerLow ??
+          Theme.of(context).colorScheme.surface.withOpacity(0.5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+            child: Row(
+              children: [
+                Text(
+                  'My Active Markups',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.add_box_outlined, size: 20.0),
+                  tooltip: 'Create New Document',
+                  onPressed: () => _showCreateDocDialog(appState),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 4.0,
+            ),
+            child: TextField(
+              controller: _searchMarkupController,
+              decoration: InputDecoration(
+                hintText: 'Search active markups...',
+                prefixIcon: const Icon(Icons.search, size: 16.0),
+                suffixIcon: _markupSearchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 14.0),
+                        onPressed: () {
+                          _searchMarkupController.clear();
+                          setState(() {
+                            _markupSearchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                isDense: true,
+                contentPadding: const EdgeInsets.all(8.0),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                ),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _markupSearchQuery = val;
+                });
+              },
+            ),
+          ),
+          Container(
+            height: 140.0,
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            child: filteredDocuments.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No active markups found.',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        fontSize: 12.0,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: filteredDocuments.length,
+                    itemBuilder: (context, index) {
+                      final doc = filteredDocuments[index];
+                      final originalIndex = appState.documents.indexOf(doc);
+                      final isSelected =
+                          appState.selectedDocumentIndex == originalIndex;
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        elevation: 0.0,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primaryContainer
+                            : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHigh,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.only(
+                            left: 12.0,
+                            right: 6.0,
+                          ),
+                          dense: true,
+                          title: Text(
+                            doc.name,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              fontSize: 12.0,
+                              color: isSelected
+                                  ? Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            doc.type.replaceAll('schema:', ''),
+                            style: const TextStyle(fontSize: 10.0),
+                          ),
+                          onTap: () => appState.selectDocument(originalIndex),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  size: 14.0,
+                                ),
+                                tooltip: 'Rename',
+                                onPressed: () => _showRenameDialog(
+                                  appState,
+                                  originalIndex,
+                                  doc.name,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 14.0),
+                                tooltip: 'Duplicate',
+                                onPressed: () =>
+                                    appState.duplicateDocument(originalIndex),
+                              ),
+                              if (appState.documents.length > 1)
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 14.0,
+                                    color: Colors.redAccent,
+                                  ),
+                                  tooltip: 'Delete',
+                                  onPressed: () =>
+                                      appState.deleteDocument(originalIndex),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+            child: Text(
+              'Instantiate New Class Type',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: TextField(
+              controller: _searchClassController,
+              decoration: InputDecoration(
+                hintText: 'Search 800+ types (e.g. Recipe)...',
+                prefixIcon: const Icon(Icons.search, size: 18.0),
+                suffixIcon: _classSearchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 16.0),
+                        onPressed: () {
+                          _searchClassController.clear();
+                          setState(() {
+                            _classSearchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                isDense: true,
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                ),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _classSearchQuery = val;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Expanded(
+            child: filteredClasses.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No classes found.',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        fontSize: 12.0,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    itemCount: filteredClasses.length,
+                    itemBuilder: (context, index) {
+                      final cls = filteredClasses[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        elevation: 0.0,
+                        color: Theme.of(context).colorScheme.surfaceContainer,
+                        child: ListTile(
+                          title: Text(
+                            cls.label,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          subtitle: Text(
+                            cls.comment,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 10.5),
+                          ),
+                          dense: true,
+                          trailing: const Icon(
+                            Icons.add_circle_outline,
+                            size: 14.0,
+                          ),
+                          onTap: () {
+                            appState.createNewDocument(
+                              'New ${cls.label} Document',
+                              cls.id,
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Created new ${cls.label} document successfully!',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

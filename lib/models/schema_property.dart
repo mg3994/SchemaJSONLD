@@ -8,6 +8,8 @@ class SchemaProperty {
     required this.comment,
     required this.domains,
     required this.ranges,
+    this.defaultValue,
+    this.isRequired = false,
   });
 
   factory SchemaProperty.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,8 @@ class SchemaProperty {
       comment: json['comment'] as String,
       domains: List<String>.from(json['domains'] as List),
       ranges: List<String>.from(json['ranges'] as List),
+      defaultValue: json['defaultValue'] as String?,
+      isRequired: json['isRequired'] as bool? ?? false,
     );
   }
 
@@ -30,6 +34,10 @@ class SchemaProperty {
 
   final List<String> ranges;
 
+  final String? defaultValue;
+
+  final bool isRequired;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -37,6 +45,8 @@ class SchemaProperty {
       'comment': comment,
       'domains': domains,
       'ranges': ranges,
+      'defaultValue': defaultValue,
+      'isRequired': isRequired,
     };
   }
 }

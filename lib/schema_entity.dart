@@ -67,10 +67,10 @@ class SchemaEntity {
       }).toList();
     });
     return SchemaEntity(
-      id: id,
+      id: 'nest_${DateTime.now().microsecondsSinceEpoch}_${id}',
       type: type,
       properties: clonedProps,
-      name: '${name} (Copy)',
+      name: name,
     );
   }
 

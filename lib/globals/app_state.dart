@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:jsonld/globals/themes.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:jsonld/schema_entity.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:jsonld/schema_service.dart';
 import 'package:jsonld/schema_value.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 @NowaGenerated()
@@ -55,6 +57,10 @@ class AppState extends ChangeNotifier {
     return _jsonLdOutput;
   }
 
+  InterstitialAd? _interstitialAd;
+
+  bool _isInterstitialAdLoading = false;
+
   void changeTheme(ThemeData theme) {
     _theme = theme;
     notifyListeners();
@@ -97,6 +103,7 @@ class AppState extends ChangeNotifier {
       );
     }
     generateJsonLdOutput();
+    loadInterstitialAd();
     notifyListeners();
   }
 
@@ -129,6 +136,7 @@ class AppState extends ChangeNotifier {
     _documents.add(doc);
     _selectedDocumentIndex = _documents.length - 1;
     generateJsonLdOutput();
+    showInterstitialAd();
     notifyListeners();
   }
 
@@ -138,6 +146,7 @@ class AppState extends ChangeNotifier {
       _documents.add(doc);
       _selectedDocumentIndex = _documents.length - 1;
       generateJsonLdOutput();
+      showInterstitialAd();
       notifyListeners();
     }
   }
@@ -178,24 +187,6 @@ class AppState extends ChangeNotifier {
       generateJsonLdOutput();
       notifyListeners();
     }
-  }
-
-  void addPropertyToEntity(
-    SchemaEntity entity,
-    String propertyId,
-    dynamic initialValue,
-  ) {
-    if (entity.properties[propertyId] == null) {
-      entity.properties[propertyId] = [];
-    }
-    entity.properties[propertyId]?.add(
-      SchemaValue(
-        id: 'val_${DateTime.now().microsecondsSinceEpoch}',
-        value: initialValue,
-      ),
-    );
-    generateJsonLdOutput();
-    notifyListeners();
   }
 
   void updatePropertyValue(
@@ -260,6 +251,7 @@ class AppState extends ChangeNotifier {
         _documents.add(imported);
         _selectedDocumentIndex = _documents.length - 1;
         generateJsonLdOutput();
+        showInterstitialAd();
         notifyListeners();
         return true;
       }
@@ -268,5 +260,84 @@ class AppState extends ChangeNotifier {
       debugPrint('Error importing JSON-LD: ${e}');
       return false;
     }
+  }
+
+  void loadInterstitialAd() {
+    if (_interstitialAd != null || _isInterstitialAdLoading) {
+      return;
+    }
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+    _isInterstitialAdLoading = true;
+    String adUnitId = '';
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      adUnitId = 'ca-app-pub-3940256099942544/1033173712';
+    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      adUnitId = 'ca-app-pub-3940256099942544/4411468910';
+    }
+    InterstitialAd.load(
+      adUnitId: adUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          _isInterstitialAdLoading = false;
+          debugPrint('InterstitialAd loaded.');
+        },
+        onAdFailedToLoad: (error) {
+          _interstitialAd = null;
+          _isInterstitialAdLoading = false;
+          debugPrint('InterstitialAd failed to load: ${error}');
+        },
+      ),
+    );
+  }
+
+  void showInterstitialAd() {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+    final ad = _interstitialAd;
+    if (ad != null) {
+      ad.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          loadInterstitialAd();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          ad.dispose();
+          _interstitialAd = null;
+          loadInterstitialAd();
+        },
+      );
+      ad.show();
+    } else {
+      loadInterstitialAd();
+    }
+  }
+
+  void addPropertyToEntity(
+    SchemaEntity entity,
+    String propertyId,
+    dynamic initialValue,
+  ) {
+    if (entity.properties[propertyId] == null) {
+      entity.properties[propertyId] = [];
+    }
+    final dynamic valueToAdd = (initialValue is SchemaEntity)
+        ? initialValue.clone()
+        : initialValue;
+    entity.properties[propertyId]?.add(
+      SchemaValue(
+        id: 'val_${DateTime.now().microsecondsSinceEpoch}',
+        value: valueToAdd,
+      ),
+    );
+    generateJsonLdOutput();
+    notifyListeners();
   }
 }
