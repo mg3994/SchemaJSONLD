@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:jsonld/schema_entity.dart';
 import 'package:jsonld/schema_value.dart';
 import 'package:jsonld/models/schema_property.dart';
+import 'package:jsonld/globals/download_helper.dart' as dl;
 
 @NowaGenerated()
 class HomePage extends StatefulWidget {
@@ -1455,14 +1456,15 @@ class _HomePageState extends State<HomePage> {
               ),
               IconButton(
                 icon: const Icon(Icons.download, size: 16.0),
-                tooltip: 'Download .json file',
+                tooltip: 'Download .jsonld file',
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: appState.jsonLdOutput));
+                  final rootName = appState.rootEntity?.name ?? 'document';
+                  final cleanName = rootName.replaceAll(RegExp(r'[^\w\s\-]'), '').replaceAll(' ', '_');
+                  final filename = '${cleanName.isNotEmpty ? cleanName : 'schema'}.jsonld';
+                  dl.downloadFile(appState.jsonLdOutput, filename);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Copied JSON! Save text to "schema.json" locally 💾',
-                      ),
+                    SnackBar(
+                      content: Text('Downloading "${filename}"... 💾'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );

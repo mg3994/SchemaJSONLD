@@ -74,13 +74,83 @@ class SchemaEntity {
     );
   }
 
+  Map<String, dynamic> serializeProperties() {
+    final Map<String, dynamic> serialized = {};
+    properties.forEach((propId, values) {
+      final List<dynamic> listData = [];
+      for (var val in values) {
+        if (val.value is SchemaEntity) {
+          listData.add({
+            'type': 'entity',
+            'id': (val.value as SchemaEntity).id,
+            'name': (val.value as SchemaEntity).name,
+            'schemaType': (val.value as SchemaEntity).type,
+            'properties': (val.value as SchemaEntity).serializeProperties(),
+          });
+        } else if (val.value is Map) {
+          listData.add({
+            'type': 'map',
+            'value': Map<String, dynamic>.from(val.value as Map),
+          });
+        } else {
+          listData.add({
+            'type': 'primitive',
+            'value': val.value,
+          });
+        }
+      }
+      serialized[propId] = listData;
+    });
+    return serialized;
+  }
+
+  static Map<String, List<SchemaValue>> deserializeProperties(Map<String, dynamic> data) {
+    final Map<String, List<SchemaValue>> parsed = {};
+    data.forEach((propId, valList) {
+      if (valList is List) {
+        final List<SchemaValue> sValues = [];
+        for (var item in valList) {
+          if (item is Map<String, dynamic>) {
+            final type = item['type']?.toString();
+            if (type == 'entity') {
+              final nested = SchemaEntity(
+                id: item['id']?.toString() ?? 'nest_${DateTime.now().microsecondsSinceEpoch}',
+                name: item['name']?.toString() ?? 'Untitled Nested',
+                type: item['schemaType']?.toString() ?? 'schema:Thing',
+                properties: deserializeProperties(item['properties'] as Map<String, dynamic>? ?? {}),
+              );
+              sValues.add(SchemaValue(
+                id: 'val_${DateTime.now().microsecondsSinceEpoch}_${item.hashCode}',
+                value: nested,
+              ));
+            } else if (type == 'map') {
+              sValues.add(SchemaValue(
+                id: 'val_${DateTime.now().microsecondsSinceEpoch}_${item.hashCode}',
+                value: item['value'],
+              ));
+            } else {
+              sValues.add(SchemaValue(
+                id: 'val_${DateTime.now().microsecondsSinceEpoch}_${item.hashCode}',
+                value: item['value'],
+              ));
+            }
+          }
+        }
+        if (sValues.isNotEmpty) {
+          parsed[propId] = sValues;
+        }
+      }
+    });
+    return parsed;
+  }
+
   static SchemaEntity fromJsonLd(
     Map<String, dynamic> json, {
     String? defaultType,
     String? docName,
   }) {
     final String type =
-        json['@type'].toString() ?? defaultType ?? 'schema:Thing';
+        json['@type']?.toString() ?? defaultType ?? 'schema:Thing';
     final String normalizedType = type.contains(':') ? type : 'schema:${type}';
     final Map<String, List<SchemaValue>> properties = {};
     json.forEach((key, val) {
