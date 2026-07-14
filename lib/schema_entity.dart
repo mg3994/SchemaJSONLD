@@ -1,8 +1,17 @@
 import 'package:jsonld/schema_value.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:jsonld/schema_service.dart';
 
 @NowaGenerated()
 class SchemaEntity {
+  bool _isEnumerationValue(String value) {
+    for (var list in SchemaService.instance.enumerationValues.values) {
+      if (list.contains(value)) {
+        return true;
+      }
+    }
+    return false;
+  }
   SchemaEntity({
     required this.id,
     required this.type,
@@ -40,6 +49,13 @@ class SchemaEntity {
           jsonValues.add((val.value as SchemaEntity).toJsonLd(isRoot: false));
         } else if (val.value is Map && (val.value as Map).containsKey('@id')) {
           jsonValues.add({'@id': '#${(val.value as Map)['@id']}'});
+        } else if (val.value is String) {
+          final String strVal = val.value as String;
+          if (strVal.startsWith('schema:') && _isEnumerationValue(strVal)) {
+            jsonValues.add('https://schema.org/${strVal.substring(7)}');
+          } else {
+            jsonValues.add(val.value);
+          }
         } else {
           jsonValues.add(val.value);
         }
@@ -74,13 +90,83 @@ class SchemaEntity {
     );
   }
 
+  Map<String, dynamic> serializeProperties() {
+    final Map<String, dynamic> serialized = {};
+    properties.forEach((propId, values) {
+      final List<dynamic> listData = [];
+      for (var val in values) {
+        if (val.value is SchemaEntity) {
+          listData.add({
+            'type': 'entity',
+            'id': (val.value as SchemaEntity).id,
+            'name': (val.value as SchemaEntity).name,
+            'schemaType': (val.value as SchemaEntity).type,
+            'properties': (val.value as SchemaEntity).serializeProperties(),
+          });
+        } else if (val.value is Map) {
+          listData.add({
+            'type': 'map',
+            'value': Map<String, dynamic>.from(val.value as Map),
+          });
+        } else {
+          listData.add({
+            'type': 'primitive',
+            'value': val.value,
+          });
+        }
+      }
+      serialized[propId] = listData;
+    });
+    return serialized;
+  }
+
+  static Map<String, List<SchemaValue>> deserializeProperties(Map<String, dynamic> data) {
+    final Map<String, List<SchemaValue>> parsed = {};
+    data.forEach((propId, valList) {
+      if (valList is List) {
+        final List<SchemaValue> sValues = [];
+        for (var item in valList) {
+          if (item is Map<String, dynamic>) {
+            final type = item['type']?.toString();
+            if (type == 'entity') {
+              final nested = SchemaEntity(
+                id: item['id']?.toString() ?? 'nest_${DateTime.now().microsecondsSinceEpoch}',
+                name: item['name']?.toString() ?? 'Untitled Nested',
+                type: item['schemaType']?.toString() ?? 'schema:Thing',
+                properties: deserializeProperties(item['properties'] as Map<String, dynamic>? ?? {}),
+              );
+              sValues.add(SchemaValue(
+                id: 'val_${DateTime.now().microsecondsSinceEpoch}_${item.hashCode}',
+                value: nested,
+              ));
+            } else if (type == 'map') {
+              sValues.add(SchemaValue(
+                id: 'val_${DateTime.now().microsecondsSinceEpoch}_${item.hashCode}',
+                value: item['value'],
+              ));
+            } else {
+              sValues.add(SchemaValue(
+                id: 'val_${DateTime.now().microsecondsSinceEpoch}_${item.hashCode}',
+                value: item['value'],
+              ));
+            }
+          }
+        }
+        if (sValues.isNotEmpty) {
+          parsed[propId] = sValues;
+        }
+      }
+    });
+    return parsed;
+  }
+
   static SchemaEntity fromJsonLd(
     Map<String, dynamic> json, {
     String? defaultType,
     String? docName,
   }) {
     final String type =
-        json['@type'].toString() ?? defaultType ?? 'schema:Thing';
+        json['@type']?.toString() ?? defaultType ?? 'schema:Thing';
     final String normalizedType = type.contains(':') ? type : 'schema:${type}';
     final Map<String, List<SchemaValue>> properties = {};
     json.forEach((key, val) {
@@ -119,13 +205,36 @@ class SchemaEntity {
             );
           }
         } else if (singleVal != null) {
+          var parsedVal = singleVal;
+          if (singleVal is String) {
+            final String s = singleVal.trim();
+            if (s.startsWith('https://schema.org/') || s.startsWith('http://schema.org/')) {
+              final String suffix = s.substring(s.lastIndexOf('/') + 1);
+              final String candidate = 'schema:$suffix';
+              // Check if we can find this candidate in enumerationValues
+              // If empty, fall back to matching by parsing
+              bool matched = false;
+              for (var list in SchemaService.instance.enumerationValues.values) {
+                if (list.contains(candidate)) {
+                  matched = true;
+                  break;
+                }
+              }
+              if (matched || suffix.isNotEmpty) {
+                // If it looks like a capital letter enum value (e.g. InStock, Monday, CreditCard), convert to schema: format
+                if (suffix.isNotEmpty && suffix[0] == suffix[0].toUpperCase()) {
+                  parsedVal = candidate;
+                }
+              }
+            }
+          }
           values.add(
             SchemaValue(
               id:
                   DateTime.now().microsecondsSinceEpoch.toString() +
                   '_' +
                   singleVal.hashCode.toString(),
-              value: singleVal,
+              value: parsedVal,
             ),
           );
         }

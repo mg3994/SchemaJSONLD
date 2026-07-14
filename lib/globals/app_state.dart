@@ -6,8 +6,12 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:jsonld/schema_service.dart';
 import 'package:jsonld/schema_value.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:jsonld/globals/database_instance.dart';
+import 'package:jsonld/database/database.dart';
 
 @NowaGenerated()
 class AppState extends ChangeNotifier {
@@ -33,6 +37,11 @@ class AppState extends ChangeNotifier {
 
   String _jsonLdOutput = '';
 
+  Timer? _debounceTimer;
+  String _saveStatus = 'Saved';
+
+  String get saveStatus => _saveStatus;
+
   List<SchemaEntity> get documents {
     return _documents;
   }
@@ -57,6 +66,12 @@ class AppState extends ChangeNotifier {
     return _jsonLdOutput;
   }
 
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
   InterstitialAd? _interstitialAd;
 
   bool _isInterstitialAdLoading = false;
@@ -72,39 +87,96 @@ class AppState extends ChangeNotifier {
     await SchemaService.instance.init();
     _isSchemaLoading = SchemaService.instance.isLoadingFullSchema;
     _loadError = SchemaService.instance.loadError;
+
+    // Load from Drift database
+    try {
+      final savedDocs = await db.select(db.localDocuments).get();
+      if (savedDocs.isNotEmpty) {
+        _documents.clear();
+        for (var d in savedDocs) {
+          final props = SchemaEntity.deserializeProperties(
+            json.decode(d.propertiesJson) as Map<String, dynamic>,
+          );
+          _documents.add(SchemaEntity(
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            properties: props,
+          ));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading documents from Drift: $e');
+    }
+
     if (_documents.isEmpty) {
-      _documents.add(
-        SchemaEntity(
-          id: 'doc_1',
-          name: 'My Personal Profile',
-          type: 'schema:Person',
-          properties: {
-            'schema:name': [SchemaValue(id: 'val_1', value: 'John Doe')],
-            'schema:jobTitle': [
-              SchemaValue(id: 'val_2', value: 'Software Engineer'),
-            ],
-          },
-        ),
+      final doc1 = SchemaEntity(
+        id: 'doc_1',
+        name: 'My Personal Profile',
+        type: 'schema:Person',
+        properties: {
+          'schema:name': [SchemaValue(id: 'val_1', value: 'John Doe')],
+          'schema:jobTitle': [
+            SchemaValue(id: 'val_2', value: 'Software Engineer'),
+          ],
+        },
       );
-      _documents.add(
-        SchemaEntity(
-          id: 'doc_2',
-          name: 'Company Website',
-          type: 'schema:WebSite',
-          properties: {
-            'schema:name': [
-              SchemaValue(id: 'val_3', value: 'Acme Corp Portal'),
-            ],
-            'schema:url': [
-              SchemaValue(id: 'val_4', value: 'https://acme.example.com'),
-            ],
-          },
-        ),
+      final doc2 = SchemaEntity(
+        id: 'doc_2',
+        name: 'Company Website',
+        type: 'schema:WebSite',
+        properties: {
+          'schema:name': [
+            SchemaValue(id: 'val_3', value: 'Acme Corp Portal'),
+          ],
+          'schema:url': [
+            SchemaValue(id: 'val_4', value: 'https://acme.example.com'),
+          ],
+        },
       );
+      _documents.add(doc1);
+      _documents.add(doc2);
+      await persistDocument(doc1, immediate: true);
+      await persistDocument(doc2, immediate: true);
     }
     generateJsonLdOutput();
     loadInterstitialAd();
     notifyListeners();
+  }
+
+  Future<void> persistDocument(SchemaEntity entity, {bool immediate = false}) async {
+    _saveStatus = 'Saving...';
+    notifyListeners();
+    _debounceTimer?.cancel();
+
+    Future<void> performSave() async {
+      try {
+        final serialized = json.encode(entity.serializeProperties());
+        await db.into(db.localDocuments).insertOnConflictUpdate(
+          LocalDocument(
+            id: entity.id,
+            name: entity.name,
+            type: entity.type,
+            propertiesJson: serialized,
+            updatedAt: DateTime.now(),
+          ),
+        );
+        _saveStatus = 'Saved';
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error persisting document to Drift: $e');
+        _saveStatus = 'Error saving';
+        notifyListeners();
+      }
+    }
+
+    if (immediate) {
+      await performSave();
+    } else {
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+        await performSave();
+      });
+    }
   }
 
   void selectDocument(int index) {
@@ -122,6 +194,7 @@ class AppState extends ChangeNotifier {
       _documents.add(entity);
       _selectedDocumentIndex = 0;
     }
+    persistDocument(entity);
     generateJsonLdOutput();
     notifyListeners();
   }
@@ -135,6 +208,7 @@ class AppState extends ChangeNotifier {
     );
     _documents.add(doc);
     _selectedDocumentIndex = _documents.length - 1;
+    persistDocument(doc);
     generateJsonLdOutput();
     showInterstitialAd();
     notifyListeners();
@@ -145,6 +219,7 @@ class AppState extends ChangeNotifier {
       final doc = _documents[index].clone();
       _documents.add(doc);
       _selectedDocumentIndex = _documents.length - 1;
+      persistDocument(doc);
       generateJsonLdOutput();
       showInterstitialAd();
       notifyListeners();
@@ -153,27 +228,47 @@ class AppState extends ChangeNotifier {
 
   void renameDocument(int index, String newName) {
     if (index >= 0 && index < _documents.length) {
-      _documents[index].name = newName;
+      final doc = _documents[index];
+      doc.name = newName;
+      persistDocument(doc);
       notifyListeners();
     }
   }
 
-  void deleteDocument(int index) {
+  void deleteDocument(int index) async {
     if (_documents.length > 1 && index >= 0 && index < _documents.length) {
+      final doc = _documents[index];
       _documents.removeAt(index);
+      try {
+        final stmt = db.delete(db.localDocuments);
+        stmt.where((tbl) => tbl.id.equals(doc.id));
+        await stmt.go();
+      } catch (e) {
+        debugPrint('Error deleting document from Drift: $e');
+      }
       if (_selectedDocumentIndex >= _documents.length) {
         _selectedDocumentIndex = _documents.length - 1;
       }
       generateJsonLdOutput();
       notifyListeners();
     } else if (_documents.length == 1) {
-      _documents[0] = SchemaEntity(
+      final oldDoc = _documents[0];
+      try {
+        final stmt = db.delete(db.localDocuments);
+        stmt.where((tbl) => tbl.id.equals(oldDoc.id));
+        await stmt.go();
+      } catch (e) {
+        debugPrint('Error deleting document from Drift: $e');
+      }
+      final newDoc = SchemaEntity(
         id: 'doc_${DateTime.now().millisecondsSinceEpoch}',
         name: 'Untitled Document',
         type: 'schema:Person',
         properties: {},
       );
+      _documents[0] = newDoc;
       _selectedDocumentIndex = 0;
+      persistDocument(newDoc);
       generateJsonLdOutput();
       notifyListeners();
     }
@@ -184,6 +279,7 @@ class AppState extends ChangeNotifier {
     if (root != null) {
       root.type = type;
       root.properties.clear();
+      persistDocument(root);
       generateJsonLdOutput();
       notifyListeners();
     }
@@ -200,6 +296,10 @@ class AppState extends ChangeNotifier {
       final index = list.indexWhere((val) => val.id == valueId);
       if (index != -1) {
         list[index].value = newValue;
+        final root = rootEntity;
+        if (root != null) {
+          persistDocument(root);
+        }
         generateJsonLdOutput();
         notifyListeners();
       }
@@ -217,6 +317,10 @@ class AppState extends ChangeNotifier {
       if (list.isEmpty) {
         entity.properties.remove(propertyId);
       }
+      final root = rootEntity;
+      if (root != null) {
+        persistDocument(root);
+      }
       generateJsonLdOutput();
       notifyListeners();
     }
@@ -224,6 +328,10 @@ class AppState extends ChangeNotifier {
 
   void removePropertyFromEntity(SchemaEntity entity, String propertyId) {
     entity.properties.remove(propertyId);
+    final root = rootEntity;
+    if (root != null) {
+      persistDocument(root);
+    }
     generateJsonLdOutput();
     notifyListeners();
   }
@@ -250,6 +358,7 @@ class AppState extends ChangeNotifier {
         final imported = SchemaEntity.fromJsonLd(decoded);
         _documents.add(imported);
         _selectedDocumentIndex = _documents.length - 1;
+        persistDocument(imported, immediate: true);
         generateJsonLdOutput();
         showInterstitialAd();
         notifyListeners();
@@ -337,6 +446,10 @@ class AppState extends ChangeNotifier {
         value: valueToAdd,
       ),
     );
+    final root = rootEntity;
+    if (root != null) {
+      persistDocument(root);
+    }
     generateJsonLdOutput();
     notifyListeners();
   }
