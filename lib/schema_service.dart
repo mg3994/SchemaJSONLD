@@ -63,6 +63,36 @@ class SchemaService {
       comment: 'A particular physical business or branch of an organization.',
       subClassOf: const ['schema:Organization', 'schema:Place'],
     ),
+    'schema:FoodEstablishment': const SchemaClass(
+      id: 'schema:FoodEstablishment',
+      label: 'FoodEstablishment',
+      comment: 'A food-related business.',
+      subClassOf: const ['schema:LocalBusiness'],
+    ),
+    'schema:Restaurant': const SchemaClass(
+      id: 'schema:Restaurant',
+      label: 'Restaurant',
+      comment: 'A restaurant.',
+      subClassOf: const ['schema:FoodEstablishment'],
+    ),
+    'schema:FinancialService': const SchemaClass(
+      id: 'schema:FinancialService',
+      label: 'FinancialService',
+      comment: 'Financial services business.',
+      subClassOf: const ['schema:LocalBusiness'],
+    ),
+    'schema:BankOrCreditUnion': const SchemaClass(
+      id: 'schema:BankOrCreditUnion',
+      label: 'BankOrCreditUnion',
+      comment: 'A bank or credit union.',
+      subClassOf: const ['schema:FinancialService'],
+    ),
+    'schema:Store': const SchemaClass(
+      id: 'schema:Store',
+      label: 'Store',
+      comment: 'A retail store.',
+      subClassOf: const ['schema:LocalBusiness'],
+    ),
     'schema:Product': const SchemaClass(
       id: 'schema:Product',
       label: 'Product',
@@ -74,6 +104,18 @@ class SchemaService {
       label: 'Event',
       comment: 'An event happening at a certain time and location.',
       subClassOf: const ['schema:Thing'],
+    ),
+    'schema:BusinessEvent': const SchemaClass(
+      id: 'schema:BusinessEvent',
+      label: 'BusinessEvent',
+      comment: 'An event of interest to businesses.',
+      subClassOf: const ['schema:Event'],
+    ),
+    'schema:Festival': const SchemaClass(
+      id: 'schema:Festival',
+      label: 'Festival',
+      comment: 'An event representing a festival.',
+      subClassOf: const ['schema:Event'],
     ),
     'schema:Place': const SchemaClass(
       id: 'schema:Place',
@@ -112,6 +154,24 @@ class SchemaService {
       comment: 'A geographical region, typically under the jurisdiction of a particular government.',
       subClassOf: const ['schema:Place'],
     ),
+    'schema:City': const SchemaClass(
+      id: 'schema:City',
+      label: 'City',
+      comment: 'A city or town.',
+      subClassOf: const ['schema:AdministrativeArea'],
+    ),
+    'schema:State': const SchemaClass(
+      id: 'schema:State',
+      label: 'State',
+      comment: 'A state or province.',
+      subClassOf: const ['schema:AdministrativeArea'],
+    ),
+    'schema:Country': const SchemaClass(
+      id: 'schema:Country',
+      label: 'Country',
+      comment: 'A country.',
+      subClassOf: const ['schema:AdministrativeArea'],
+    ),
     'schema:GeoCoordinates': const SchemaClass(
       id: 'schema:GeoCoordinates',
       label: 'GeoCoordinates',
@@ -123,6 +183,12 @@ class SchemaService {
       label: 'Service',
       comment: 'A service provided by an organization or business person.',
       subClassOf: const ['schema:Thing'],
+    ),
+    'schema:GovernmentService': const SchemaClass(
+      id: 'schema:GovernmentService',
+      label: 'GovernmentService',
+      comment: 'A service provided by a government.',
+      subClassOf: const ['schema:Service'],
     ),
   };
 
@@ -544,14 +610,36 @@ class SchemaService {
     }
   }
 
+  String _normalizeId(String id) {
+    var normalized = id.trim();
+    if (normalized.startsWith('https://schema.org/')) {
+      normalized = normalized.substring('https://schema.org/'.length);
+    } else if (normalized.startsWith('http://schema.org/')) {
+      normalized = normalized.substring('http://schema.org/'.length);
+    } else if (normalized.startsWith('schema:')) {
+      normalized = normalized.substring('schema:'.length);
+    }
+    return normalized;
+  }
+
   bool isSubclassOf(String childId, String parentId) {
-    if (childId == parentId) {
+    final normChild = _normalizeId(childId);
+    final normParent = _normalizeId(parentId);
+    if (normChild == normParent) {
       return true;
     }
-    if (parentId == 'schema:Thing') {
+    if (normParent == 'Thing') {
       return true;
     }
-    final cls = classes[childId];
+
+    // Find the class in classes using prefix-agnostic lookup
+    SchemaClass? cls;
+    for (var entry in classes.entries) {
+      if (_normalizeId(entry.key) == normChild) {
+        cls = entry.value;
+        break;
+      }
+    }
     if (cls == null) {
       return false;
     }
@@ -659,14 +747,24 @@ class SchemaService {
     final visited = <String>{};
     while (queue.isNotEmpty) {
       final current = queue.removeAt(0);
-      if (visited.contains(current)) {
+      final normCurrent = _normalizeId(current);
+      if (visited.contains(normCurrent)) {
         continue;
       }
-      visited.add(current);
-      final cls = classes[current];
+      visited.add(normCurrent);
+
+      SchemaClass? cls;
+      for (var entry in classes.entries) {
+        if (_normalizeId(entry.key) == normCurrent) {
+          cls = entry.value;
+          break;
+        }
+      }
+
       if (cls != null) {
         for (var parent in cls.subClassOf) {
-          if (!ancestors.contains(parent)) {
+          final normParent = _normalizeId(parent);
+          if (!ancestors.any((anc) => _normalizeId(anc) == normParent)) {
             ancestors.add(parent);
             queue.add(parent);
           }
